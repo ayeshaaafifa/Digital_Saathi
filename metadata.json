@@ -1,0 +1,6 @@
+{
+  "name": "Digital Saathi – Technology for Everyone",
+  "description": "An accessible bilingual AI companion helping elderly people, rural communities, and students navigate smartphones, online forms, error screenshots, and digital safety in English and Urdu.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

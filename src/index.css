@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: "Outfit", "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    --font-urdu: "Noto Naskh Arabic", "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans);
+    font-size: 16px;
+  }
+
+  html.text-scale-large {
+    font-size: 18px;
+  }
+
+  html.text-scale-xlarge {
+    font-size: 20px;
+  }
+
+  body {
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  html[dir="rtl"] {
+    font-family: var(--font-urdu);
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] h3,
+  html[dir="rtl"] .font-display {
+    font-family: var(--font-urdu);
+  }
+
+  .font-mono-tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 3px solid #0f766e;
+    outline-offset: 2px;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* High Contrast Accessibility Mode (AAA contrast without breaking white text on dark buttons) */
+html.high-contrast body,
+html.high-contrast .bg-slate-50,
+html.high-contrast .bg-slate-100,
+html.high-contrast .bg-white,
+html.high-contrast .bg-white\/95 {
+  background-color: #ffffff !important;
+  color: #000000;
+}
+
+html.high-contrast header,
+html.high-contrast footer,
+html.high-contrast nav[aria-label="Mobile quick navigation"] {
+  background-color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+html.high-contrast .border-slate-100,
+html.high-contrast .border-slate-200,
+html.high-contrast .border-slate-300,
+html.high-contrast .border-teal-100,
+html.high-contrast .border-teal-200 {
+  border-color: #0f172a !important;
+}
+
+html.high-contrast .border {
+  border-width: 2px;
+}
+
+html.high-contrast .text-slate-400,
+html.high-contrast .text-slate-500,
+html.high-contrast .text-slate-600,
+html.high-contrast .text-slate-700,
+html.high-contrast .text-slate-800,
+html.high-contrast .text-slate-900,
+html.high-contrast .text-teal-700,
+html.high-contrast .text-teal-800,
+html.high-contrast .text-teal-900 {
+  color: #000000 !important;
+}
+
+html.high-contrast .bg-teal-700,
+html.high-contrast .bg-emerald-700 {
+  background-color: #042f2e !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+}
+
+html.high-contrast .bg-teal-700 *,
+html.high-contrast .bg-emerald-700 * {
+  color: #ffffff !important;
+}
+
+html.high-contrast .bg-teal-50,
+html.high-contrast .bg-teal-50\/60,
+html.high-contrast .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+  border-color: #064e3b !important;
+  color: #000000 !important;
+}
+
+html.high-contrast .bg-amber-50,
+html.high-contrast .bg-amber-50\/50 {
+  background-color: #fefce8 !important;
+  border-color: #713f12 !important;
+  color: #000000 !important;
+}
+
+html.high-contrast .text-amber-700,
+html.high-contrast .text-amber-800,
+html.high-contrast .text-amber-900,
+html.high-contrast .text-amber-950 {
+  color: #422006 !important;
+}
+
+html.high-contrast .bg-rose-50,
+html.high-contrast .bg-rose-50\/40,
+html.high-contrast .bg-rose-100\/80 {
+  background-color: #fff1f2 !important;
+  border-color: #881337 !important;
+  color: #000000 !important;
+}
+
+html.high-contrast .text-rose-700,
+html.high-contrast .text-rose-800,
+html.high-contrast .text-rose-900,
+html.high-contrast .text-rose-950 {
+  color: #4c0519 !important;
+}
+
+html.high-contrast input::placeholder,
+html.high-contrast textarea::placeholder {
+  color: #334155 !important;
+  opacity: 1;
+}
+
+html.high-contrast button:focus-visible,
+html.high-contrast a:focus-visible,
+html.high-contrast input:focus-visible,
+html.high-contrast textarea:focus-visible,
+html.high-contrast select:focus-visible {
+  outline: 3px solid #000000 !important;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

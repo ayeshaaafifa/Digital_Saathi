@@ -1,0 +1,266 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny all paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Hardened Primitives ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidSubId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isVerified() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function isValidLanguage(lang) {
+      return lang in ['en', 'ur', 'roman-ur'];
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+        'uid',
+        'displayName',
+        'preferredLanguage',
+        'completedLessonsCount',
+        'questionsAskedCount',
+        'screenshotsAnalyzedCount',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid',
+        'displayName',
+        'preferredLanguage',
+        'completedLessonsCount',
+        'questionsAskedCount',
+        'screenshotsAnalyzedCount',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.uid is string
+      && data.uid == request.auth.uid
+      && data.uid == userId
+      && data.displayName is string
+      && data.displayName.size() >= 1
+      && data.displayName.size() <= 80
+      && isValidLanguage(data.preferredLanguage)
+      && data.completedLessonsCount is int
+      && data.completedLessonsCount >= 0
+      && data.completedLessonsCount <= 1000
+      && data.questionsAskedCount is int
+      && data.questionsAskedCount >= 0
+      && data.questionsAskedCount <= 100000
+      && data.screenshotsAnalyzedCount is int
+      && data.screenshotsAnalyzedCount >= 0
+      && data.screenshotsAnalyzedCount <= 100000
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidLessonProgress(data, userId, lessonId) {
+      return data.keys().hasAll(['lessonId', 'userId', 'completed', 'completedAt'])
+      && data.keys().hasOnly(['lessonId', 'userId', 'completed', 'completedAt'])
+      && isValidSubId(data.lessonId)
+      && data.lessonId == lessonId
+      && data.userId is string
+      && data.userId == request.auth.uid
+      && data.userId == userId
+      && data.completed is bool
+      && data.completedAt is timestamp;
+    }
+
+    function isValidSavedChatEntry(data, userId, entryId) {
+      return data.keys().hasAll([
+        'entryId',
+        'userId',
+        'language',
+        'question',
+        'summary',
+        'steps',
+        'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'entryId',
+        'userId',
+        'language',
+        'question',
+        'summary',
+        'steps',
+        'createdAt'
+      ])
+      && isValidSubId(data.entryId)
+      && data.entryId == entryId
+      && data.userId is string
+      && data.userId == request.auth.uid
+      && data.userId == userId
+      && isValidLanguage(data.language)
+      && data.question is string
+      && data.question.size() >= 1
+      && data.question.size() <= 500
+      && data.summary is string
+      && data.summary.size() >= 1
+      && data.summary.size() <= 600
+      && data.steps is list
+      && data.steps.size() >= 1
+      && data.steps.size() <= 12
+      && data.steps[0] is string
+      && data.steps[0].size() >= 1
+      && data.steps[0].size() <= 400
+      && data.createdAt is timestamp;
+    }
+
+    function isValidHelpRequest(data, userId, requestId) {
+      return data.keys().hasAll([
+        'requestId',
+        'userId',
+        'topic',
+        'language',
+        'description',
+        'volunteerId',
+        'volunteerName',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'requestId',
+        'userId',
+        'topic',
+        'language',
+        'description',
+        'volunteerId',
+        'volunteerName',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ])
+      && isValidSubId(data.requestId)
+      && data.requestId == requestId
+      && data.userId is string
+      && data.userId == request.auth.uid
+      && data.userId == userId
+      && data.topic is string
+      && data.topic.size() >= 1
+      && data.topic.size() <= 120
+      && isValidLanguage(data.language)
+      && data.description is string
+      && data.description.size() >= 1
+      && data.description.size() <= 600
+      && isValidSubId(data.volunteerId)
+      && data.volunteerName is string
+      && data.volunteerName.size() >= 1
+      && data.volunteerName.size() <= 80
+      && data.status in ['submitted', 'resolved', 'cancelled']
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    // --- Owner-Scoped Collections ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName',
+          'preferredLanguage',
+          'completedLessonsCount',
+          'questionsAskedCount',
+          'screenshotsAnalyzedCount',
+          'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId);
+
+      match /lessonProgress/{lessonId} {
+        allow get: if isOwner(userId) && isValidSubId(lessonId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+
+        allow create: if isOwner(userId)
+          && isValidSubId(lessonId)
+          && isValidLessonProgress(incoming(), userId, lessonId)
+          && incoming().completedAt == request.time;
+
+        allow update: if isOwner(userId)
+          && isValidSubId(lessonId)
+          && isValidLessonProgress(incoming(), userId, lessonId)
+          && incoming().userId == existing().userId
+          && incoming().lessonId == existing().lessonId
+          && incoming().completedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'completedAt']);
+
+        allow delete: if isOwner(userId) && isValidSubId(lessonId);
+      }
+
+      match /chatHistory/{entryId} {
+        allow get: if isOwner(userId) && isValidSubId(entryId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+
+        allow create: if isOwner(userId)
+          && isValidSubId(entryId)
+          && isValidSavedChatEntry(incoming(), userId, entryId)
+          && incoming().createdAt == request.time;
+
+        allow delete: if isOwner(userId) && isValidSubId(entryId);
+      }
+
+      match /helpRequests/{requestId} {
+        allow get: if isOwner(userId) && isValidSubId(requestId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+
+        allow create: if isOwner(userId)
+          && isValidSubId(requestId)
+          && isValidHelpRequest(incoming(), userId, requestId)
+          && incoming().status == 'submitted'
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+
+        allow update: if isOwner(userId)
+          && isValidSubId(requestId)
+          && isValidHelpRequest(incoming(), userId, requestId)
+          && existing().status == 'submitted'
+          && incoming().status in ['resolved', 'cancelled']
+          && incoming().userId == existing().userId
+          && incoming().requestId == existing().requestId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidSubId(requestId);
+      }
+    }
+  }
+}
